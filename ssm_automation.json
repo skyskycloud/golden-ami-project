@@ -1,1 +1,24 @@
-.
+{
+  "description": "Automation for Golden AMI creation",
+  "schemaVersion": "0.3",
+  "assumeRole": "{{ AutomationAssumeRole }}",
+  "parameters": {
+    "InstanceId": {
+      "type": "String",
+      "description": "Instance to create Golden AMI"
+    }
+  },
+  "mainSteps": [
+    {
+      "name": "CreateAMI",
+      "action": "aws:executeAwsApi",
+      "inputs": {
+        "Service": "ec2",
+        "Api": "CreateImage",
+        "InstanceId": "{{ InstanceId }}",
+        "Name": "GoldenAMI-{{ global:DATE_TIME }}",
+        "NoReboot": true
+      }
+    }
+  ]
+}
