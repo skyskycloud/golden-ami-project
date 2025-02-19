@@ -1,0 +1,57 @@
+{
+  "description": "Automation document to create a Golden AMI",
+  "schemaVersion": "0.3",
+  "assumeRole": "{{ AutomationAssumeRole }}",
+  "parameters": {
+    "SourceAmiId": {
+      "type": "String",
+      "description": "The ID of the source AMI."
+    },
+    "InstanceType": {
+      "type": "String",
+      "default": "t2.micro",
+      "description": "The instance type to use for the build instance."
+    }
+  },
+  "mainSteps": [
+    {
+      "name": "launchInstance",
+      "action": "aws:runInstances",
+      "inputs": {
+        "ImageId": "{{ SourceAmiId }}",
+        "InstanceType": "{{ InstanceType }}",
+        "MinInstanceCount": 1,
+        "MaxInstanceCount": 1
+      }
+    },
+    {
+      "name": "installUpdates",
+      "action": "aws:runCommand",
+      "inputs": {
+        "DocumentName": "AWS-RunShellScript",
+        "InstanceIds": ["{{ launchInstance.InstanceIds }}"],
+        "Parameters": {
+          "commands": [
+            "yum update -y",
+            "yum install -y httpd"
+          ]
+        }
+      }
+    },
+    {
+      "name": "createImage",
+      "action": "aws:createImage",
+      "inputs": {
+        "InstanceId": "{{ launchInstance.InstanceIds }}",
+        "ImageName": "GoldenAMI-{{ global:DATE_TIME }}"
+      }
+    },
+    {
+      "name": "terminateInstance",
+      "action": "aws:terminateInstances",
+      "inputs": {
+        "InstanceIds": ["{{ launchInstance.InstanceIds }}"]
+      }
+    }
+  ]
+}
